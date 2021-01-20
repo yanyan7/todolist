@@ -1,0 +1,500 @@
+<html>
+<head>
+<script type="text/javascript">
+
+    let ROW_NUM = [];
+
+    window.onload = () => {
+        load();
+    }
+
+    //## 表示
+    const load = () => {
+
+        //一覧ヘッダ部のHTMLを生成
+        const elementDiv = document.getElementById("readDiv"); 
+        const elementTable = document.createElement('table'); 
+        elementTable.id = "readTable"; 
+        elementDiv.appendChild(elementTable); 
+
+        const elementTr = document.createElement('tr'); 
+        elementTr.id = "tr_read_head"; 
+        elementTr.className = "tr_read"; 
+        elementTable.appendChild(elementTr); 
+
+        const elementThSelect = document.createElement('td');
+        elementTr.appendChild(elementThSelect);
+        // elementThSelect.innerHTML = "";
+
+            const elementCheckBoxAll = document.createElement('input');
+            elementCheckBoxAll.type = "checkbox";
+            elementCheckBoxAll.id = "checkbox_th";
+            elementCheckBoxAll.className = "checkbox";
+            elementCheckBoxAll.onchange = new Function(`selectAll();`);
+            elementThSelect.appendChild(elementCheckBoxAll);
+
+        const elementThCat = document.createElement('td');
+        elementThCat.className = "th_read_category";
+        elementTr.appendChild(elementThCat);
+        elementThCat.innerHTML = "案件";
+
+        const elementThCon = document.createElement('td');
+        elementThCon.className = "th_read_content";
+        elementTr.appendChild(elementThCon);
+        elementThCon.innerHTML = "内容";
+
+        const elementThDead = document.createElement('td');
+        elementThDead.className = "th_read_deadline";
+        elementTr.appendChild(elementThDead);
+        elementThDead.innerHTML = "期限";
+
+
+        //一覧明細部のHTMLを生成
+        for(let i=0; i<localStorage.length; i++){
+
+            const getjson = localStorage.getItem(i);
+            const obj = JSON.parse(getjson);
+
+            if(!obj){
+                continue;
+            }
+
+            const elementDiv = document.getElementById("readTable"); 
+
+            const elementTr = document.createElement('tr'); 
+            elementTr.id = "tr_" + i; 
+            elementTr.className = "tr_read"; 
+            elementDiv.appendChild(elementTr); 
+
+            const elementTdSelect = document.createElement('td');
+            elementTdSelect.id = "td_" + i + "_select";
+            elementTdSelect.className = "td_read_select"; 
+            elementTr.appendChild(elementTdSelect);
+
+                const elementCheckBox = document.createElement('input');
+                elementCheckBox.type = "checkbox";
+                elementCheckBox.id = "checkbox_" + i;
+                elementCheckBox.className = "checkbox";
+                elementCheckBox.onchange = new Function(`select(${i});`);
+                elementTdSelect.appendChild(elementCheckBox);
+
+            const elementTdCat = document.createElement('td');
+            elementTdCat.id = "td_" + i + "_category";
+            elementTdCat.className = "td_read_category"; 
+            elementTr.appendChild(elementTdCat);
+
+                const elementTextCat = document.createElement('input');
+                elementTextCat.type = "text";
+                elementTextCat.id = "text_category_" + i;
+                elementTextCat.className = "text_category"; 
+                elementTextCat.value = obj.category;
+                elementTextCat.onkeyup = new Function(`update(${i});`);
+                elementTdCat.appendChild(elementTextCat);
+
+            const elementTdCon = document.createElement('td');
+            elementTdCon.id = "td_" + i + "_content";
+            elementTdCon.className = "td_read_content";
+            elementTr.appendChild(elementTdCon);
+
+                const elementTextCon = document.createElement('textarea');
+                elementTextCon.id = "text_content_" + i;
+                elementTextCon.className = "text_content"; 
+                elementTextCon.rows = "7";
+                elementTextCon.cols = "100";
+                elementTextCon.onkeyup = new Function(`update(${i});`);
+                elementTdCon.appendChild(elementTextCon);
+                elementTextCon.innerHTML = obj.content;
+
+            const elementTdDead = document.createElement('td');
+            elementTdDead.id = "td_" + i + "_deadline";
+            elementTdDead.className = "td_read_deadline";
+            elementTr.appendChild(elementTdDead);
+
+                const elementTextDead = document.createElement('input');
+                elementTextDead.type = "text";
+                elementTextDead.id = "text_deadline_" + i;
+                elementTextDead.className = "text_deadline"; 
+                elementTextDead.value = obj.deadline;
+                elementTextDead.onkeyup = new Function(`update(${i});`);
+                elementTdDead.appendChild(elementTextDead);
+        }
+
+        //保持した位置にチェック
+        for(let rowNum of ROW_NUM){
+
+            const checkbox = document.getElementById("checkbox_" + rowNum);
+            if(checkbox){
+                checkbox.checked = true;
+            }
+        }
+    }
+
+    //## 選択
+    const select = rowNum => {
+
+        const checkbox = document.getElementById(`checkbox_${rowNum}`);
+
+        if(checkbox.checked){
+
+            //選択行を配列に追加
+            ROW_NUM.push(rowNum);
+
+            //昇順にソート
+            ROW_NUM.sort(function(a,b){
+                if( a < b ) return -1;
+                if( a > b ) return 1;
+                return 0;
+            });
+
+        }else{
+            //選択行を配列から削除(sliceメソッド何故か上手くいかなかったため以下で実施)
+            const temp = [];
+
+            for(let item of ROW_NUM){
+                if(item != rowNum){
+                    temp.push(item);
+                }
+            }
+
+            ROW_NUM = temp;
+        }
+
+        //重複を削除(選択後に全選択するとROW_NUMが重複するため)
+        const temp1 = Array.from(new Set(ROW_NUM))
+        ROW_NUM = temp1;
+    }
+
+    //## 全選択
+    const selectAll = () => {
+
+        const checkboxAll = document.getElementById("checkbox_th");
+
+        for(let i=0; i<localStorage.length; i++){
+
+            let checkbox = document.getElementById(`checkbox_${i}`);
+
+            if(checkboxAll.checked){
+                checkbox.checked = true;
+            }else{
+                checkbox.checked = false;
+            }
+
+            select(i);
+        }
+    }
+
+    //## 更新
+    const update = rowNum => {
+
+        const category = document.getElementById(`text_category_${rowNum}`);
+        const content = document.getElementById(`text_content_${rowNum}`);
+        const deadline = document.getElementById(`text_deadline_${rowNum}`);
+
+        const obj = {
+            "category": category.value,
+            "content": content.value,
+            "deadline": deadline.value
+        };
+
+        const setjson = JSON.stringify(obj);
+        localStorage.setItem(rowNum,setjson);
+    }
+
+    //## 行追加
+    const add = () => {
+
+        const key = localStorage.length;
+
+        const obj = {
+            "category": null,
+            "content": null,
+            "deadline": null
+        };
+
+        const setjson = JSON.stringify(obj);
+        localStorage.setItem(key,setjson);
+
+        document.location.reload();
+    }
+
+    //## 削除(完了)前確認
+    const confirmDelete = () => {
+
+        //未選択チェック
+        if(!selectCheck()){
+            return;
+        }
+
+        const result = window.confirm("一覧から削除してよろしいですか？");
+
+        if(result){
+            deleteOne();
+        }
+    }
+
+    //## 削除(完了)
+    const deleteOne = () => {
+
+        //選択行数分くり返し
+        for(let i=0; i<ROW_NUM.length; i++){
+
+            rowNum = ROW_NUM[i];
+
+            //行削除
+            localStorage.removeItem(rowNum);
+
+            //消した行を詰める(そうしないと表示時に苦しむため)
+            while(true){
+
+                //一行後ろをバックアップ
+                const getjson = localStorage.getItem(rowNum + 1);
+                const objBak = JSON.parse(getjson);
+
+                if(!objBak){
+                    break;  //最終行に来たら終わり
+                }
+
+                const categoryBak = objBak.category;
+                const contentBak = objBak.content;
+                const deadlineBak = objBak.deadline;
+
+                //一行後ろを削除
+                localStorage.removeItem(rowNum + 1);
+
+                //一行詰める
+                const key = rowNum;
+
+                const obj = {
+                    "category": categoryBak,
+                    "content": contentBak,
+                    "deadline": deadlineBak
+                };
+
+                const setjson = JSON.stringify(obj);
+                localStorage.setItem(key,setjson);
+
+                rowNum += 1;
+            }
+
+
+            //後続の選択行番号を1ずつ減算する
+            for(let j=i+1; j<ROW_NUM.length; j++){
+                
+                ROW_NUM[j] -= 1;
+            }
+        }
+
+        document.location.reload();
+    }
+
+    //## 行移動
+    const move = func => {
+
+        //未選択チェック
+        if(!selectCheck()){
+            return;
+        }
+
+        //選択行数分くり返し
+        for(let i=0; i<ROW_NUM.length; i++){
+
+            //未選択チェック
+            if(!selectCheck()){
+                return;
+            }
+
+            let rowNumFrom;
+            let rowNumTo;
+
+            if(func == 0){
+                //上移動
+                rowNumFrom = ROW_NUM[i];
+                rowNumTo = rowNumFrom - 1;
+            }else{
+                //下移動
+                rowNumFrom = ROW_NUM[ROW_NUM.length - 1 - i];
+                rowNumTo = rowNumFrom + 1;
+            }
+
+            let getjsonFrom = localStorage.getItem(rowNumFrom);
+            let objFrom = JSON.parse(getjsonFrom);
+
+            let getjsonTo = localStorage.getItem(rowNumTo);
+            let objTo = JSON.parse(getjsonTo);
+
+            let obj;
+
+            obj = {
+                "category": objTo.category,
+                "content": objTo.content,
+                "deadline": objTo.deadline
+            };
+
+            let setjsonFrom = JSON.stringify(obj);
+            localStorage.setItem(rowNumFrom,setjsonFrom);
+
+            obj = {
+                "category": objFrom.category,
+                "content": objFrom.content,
+                "deadline": objFrom.deadline
+            };
+
+            let setjsonTo = JSON.stringify(obj);
+            localStorage.setItem(rowNumTo,setjsonTo);
+        }
+
+        //選択位置を更新(再読込後のため)
+        for(let i=0; i<ROW_NUM.length; i++){
+
+            if(func == 0){
+                //上移動
+                ROW_NUM[i] -= 1;
+            }else{
+                //下移動
+                ROW_NUM[i] += 1;
+            }
+        }
+
+        const readTable = document.getElementById("readTable");
+        readTable.remove(); 
+        load();
+    }
+
+    //## 全移動(一番上 or 下まで移動)
+    const moveAll = func => {
+
+        //未選択チェック
+        if(!selectCheck()){
+            return;
+        }
+
+        const temp = ROW_NUM;
+
+        if(func == 0){
+            //上移動 
+            const num = temp[0];
+
+            //一行ずつ移動をくり返す
+            for(let i=0; i<num; i++){
+                move(0);
+            }
+
+        }else{
+            //下移動
+            const num = localStorage.length - 1 - temp[temp.length-1];
+
+            //一行ずつ移動をくり返す
+            for(let i=0; i<num; i++){
+                move(1);
+            }
+        }
+    }
+
+    //## 未選択チェック
+    const selectCheck = () => {
+
+        if(!ROW_NUM.length){
+            alert("対象を選択して下さい");
+            return false;      
+        }else{
+            return true;
+        }
+    }
+
+</script>
+<style type="text/css">
+
+    #readDiv {
+        margin-top: 30px;
+    }   
+
+    #readTable {
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    #tr_read_head {
+        background-color:#BBFFFF;
+    }
+
+    .tr_read:nth-child(odd) {
+        background-color:#EEFFFF;
+    }
+
+    .th_read_category, .th_read_content, .th_read_deadline {
+        font-family: "Helvetica Neue",
+                        Arial,
+                        "Hiragino Kaku Gothic ProN",
+                        "Hiragino Sans",
+                        Meiryo,
+                        sans-serif;
+    }
+
+    .td_read_select {
+        vertical-align: top;
+        padding: 5px 10px 5px 0px;
+    }
+
+    .td_read_category {
+        width: 150px;
+        vertical-align: top;
+        padding: 5px 25px 5px 0px;
+    }
+    
+    .td_read_content {
+        width: 700px;
+        vertical-align: top;
+        padding: 5px 25px 5px 0px;
+        white-space: pre-wrap;  /*改行を表示する*/
+    }
+
+    .td_read_deadline {
+        width: 150px;
+        vertical-align: top;
+        padding: 5px 0px 5px 0px;
+    }
+
+    .text_category, .text_content, .text_deadline {
+        border: 1px solid;
+        border-radius: 3px;
+        border-color:dimgray;
+        font-family: "Helvetica Neue",
+                        Arial,
+                        "Hiragino Kaku Gothic ProN",
+                        "Hiragino Sans",
+                        Meiryo,
+                        sans-serif;
+        /* background-color: transparent; */
+    }
+
+    .button {
+        display: inline-block;
+        margin-right: 10px;
+        padding: 0.25em 0.5em;
+        text-decoration: none;
+        background: #99FFFF;
+        color: black;
+        border: solid 1px #00FFFF;
+        border-radius: 3px;
+        font-family: "Helvetica Neue",
+                        Arial,
+                        "Hiragino Kaku Gothic ProN",
+                        "Hiragino Sans",
+                        Meiryo,
+                        sans-serif;
+        font-weight: bold;
+    }
+
+</style>
+</head>
+<body>
+    <div id="readDiv">
+        <a href="#" id="buttonAdd" class="button" onclick="add()">＋</a>
+        <a href="#" id="buttonDelete" class="button" onclick="confirmDelete()">－</a>
+        <a href="#" id="buttonUp" class="button" onclick="move(0)">↑</a>
+        <a href="#" id="buttonDown" class="button" onclick="move(1)">↓</a>
+        <a href="#" id="buttonUpAll" class="button" onclick="moveAll(0)">↑↑</a>
+        <a href="#" id="buttonDownAll" class="button" onclick="moveAll(1)">↓↓</a>
+    </div>
+</body>
+</html>
